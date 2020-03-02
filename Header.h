@@ -57,9 +57,9 @@ char message[20];
 void print_message(char *s, bool outcome);
 
 //PLEASE AMEND THE DIRECTORY BELOW
-char in[100] = "C:\\Users\\vkelefouras\\Desktop\\rec.pgm";
-char out[100] = "C:\\Users\\vkelefouras\\Desktop\\filtered.pgm";
-char out2[100] = "C:\\Users\\vkelefouras\\Desktop\\gradient.pgm";
+char in[100] = "C:\\Users\\Xtrendence\\Documents\\GitHub\\NET112-Practical\\rec.pgm";
+char out[100] = "C:\\Users\\Xtrendence\\Documents\\GitHub\\NET112-Practical\\filtered.pgm";
+char out2[100] = "C:\\Users\\Xtrendence\\Documents\\GitHub\\NET112-Practical\\gradient.pgm";
 
 FILE *fin;
 errno_t err;
