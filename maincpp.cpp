@@ -248,7 +248,7 @@ void write_image(char* filename, unsigned short int image[N][M]) {
 	int i, j;
 
 	printf("  Writing result to disk (%s)...\n", filename);
-	if ((err = fopen_s(&foutput, filename, "wb")) != NULL) {
+	if ((err = fopen_s(&foutput, filename, "wb")) != 0) {
 		printf("Unable to open file %s for writing\n", filename);
 		exit(-1);
 	}
@@ -272,12 +272,12 @@ void openfile(char *filename, FILE** finput) {
 	char header[255];
 	int aa;
 
-	if ((err = fopen_s(finput, filename, "rb")) != NULL) {
+	if ((err = fopen_s(finput, filename, "rb")) != 0) {
 		printf("Unable to open file %s for reading\n");
 		exit(-1);
 	}
 
-	aa = fscanf_s(*finput, "%s", header, 20);
+	aa = fscanf(*finput, "%s", header, 20);
 
 	/*if (strcmp(header,"P2")!=0) {
 	   fprintf(stderr,"\nFile %s is not a valid ascii .pgm file (type P2)\n",
