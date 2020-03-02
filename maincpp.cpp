@@ -1,15 +1,8 @@
-
-
 #include "Header.h"
-
-
 
 using namespace std;
 
-
-
 int main() {
-
 	//the following command pins the current process to the 1st core
 	//otherwise, the OS tongles this process between different cores
 	BOOL success = SetProcessAffinityMask(GetCurrentProcess(), 1);
@@ -19,13 +12,9 @@ int main() {
 		return -1;
 	}
 
-
-
-
 	//--------------read the input image
 	read_image(in, in_image);
 
-	
 	//------Gaussian Blur
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -42,7 +31,6 @@ int main() {
 
 	snprintf(message, sizeof(message) - 1, "Gaussian Blur");
 	print_message(message, compare_Gaussian_images());
-
 
 	//------Sobel
 	start = std::chrono::high_resolution_clock::now();
@@ -67,34 +55,19 @@ int main() {
 	return 0;
 }
 
-
-
-
-
-
 void print_message(char *s, bool outcome) {
-
 	if (outcome == true)
 		printf("\n\n\r ----- %s output is correct -----\n\r", s);
 	else
 		printf("\n\n\r -----%s output is INcorrect -----\n\r", s);
-
 }
 
-
-
-
-
-
 void Gaussian_Blur_AVX() {
-
-
 	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
 	__m256i r8, r9, r10, r14, r15, const0, const1, const2, ex1, ex2, ex3;
 	__m128i t0, t1, t2, t3, t4, t5,c0,c1,c2;
 	int i, j;
 	int temp;
-
 
 	const0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
 	const1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
@@ -103,28 +76,17 @@ void Gaussian_Blur_AVX() {
 	c0 = _mm_set_epi16(0, 0, 0, 2, 4, 5, 4, 2);
 	c1 = _mm_set_epi16(0, 0, 0, 4, 9, 12, 9, 4);
 	c2 = _mm_set_epi16(0, 0, 0, 5, 12, 15, 12, 5);
-
-	
-
-	   
 }
 
-
-
-
 void Gaussian_Blur_default() {
-
-
 	short int row, col, rowOffset, colOffset;
 	short int newPixel;
-
 
 	for (row = 2; row < N - 2; row++) {
 		for (col = 2; col < M - 2; col++) {
 			newPixel = 0;
 			for (rowOffset = -2; rowOffset <= 2; rowOffset++) {
 				for (colOffset = -2; colOffset <= 2; colOffset++) {
-
 					newPixel += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
 				}
 			}
@@ -133,14 +95,8 @@ void Gaussian_Blur_default() {
 	}
 }
 
-
-
-
 //returns false/true, when the output image is incorrect/correct, respectively
 bool compare_Gaussian_images() {
-
-
-
 	int row, col, rowOffset, colOffset;
 	int newPixel;
 
@@ -149,7 +105,6 @@ bool compare_Gaussian_images() {
 			newPixel = 0;
 			for (rowOffset = -2; rowOffset <= 2; rowOffset++) {
 				for (colOffset = -2; colOffset <= 2; colOffset++) {
-
 					newPixel += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
 				}
 			}
@@ -162,11 +117,9 @@ bool compare_Gaussian_images() {
 	}
 
 	return true;
-
 }
 
 void scale_image() {
-
 	/* the output of Sobel (gradient has values larger than 255, thus those are capped to 255
 	alternatively, we can scale it, or use canny algorithm*/
 
@@ -177,26 +130,21 @@ void scale_image() {
 		}
 }
 
-
 void Sobel_default() {
 	int row, col, rowOffset, colOffset;
 	int Gx, Gy;
 	float thisAngle;
 	int newAngle;
 
-
-
 	/*---------------------------- Determine edge directions and gradient strengths -------------------------------------------*/
 	for (row = 1; row < N - 1; row++) {
 		for (col = 1; col < M - 1; col++) {
-
 			Gx = 0;
 			Gy = 0;
 
 			/* Calculate the sum of the Sobel mask times the nine surrounding pixels in the x and y direction */
 			for (rowOffset = -1; rowOffset <= 1; rowOffset++) {
 				for (colOffset = -1; colOffset <= 1; colOffset++) {
-
 					Gx += filt_image[row + rowOffset][col + colOffset] * GxMask[rowOffset + 1][colOffset + 1];
 					Gy += filt_image[row + rowOffset][col + colOffset] * GyMask[rowOffset + 1][colOffset + 1];
 				}
@@ -217,34 +165,26 @@ void Sobel_default() {
 			if (((thisAngle > 112.5) && (thisAngle < 157.5)) || ((thisAngle > -67.5) && (thisAngle < -22.5)))
 				newAngle = 135;
 
-
-
 			edgeDir[row][col] = newAngle;
 		}
 	}
 }
 
-
 bool compare_Sobel_images() {
-
 	int row, col, rowOffset, colOffset;
 	int Gx, Gy, test1, test2;
 	float thisAngle;
 	int newAngle;
 
-
-
 	/*---------------------------- Determine edge directions and gradient strengths -------------------------------------------*/
 	for (row = 1; row < N - 1; row++) {
 		for (col = 1; col < M - 1; col++) {
-
 			Gx = 0;
 			Gy = 0;
 
 			/* Calculate the sum of the Sobel mask times the nine surrounding pixels in the x and y direction */
 			for (rowOffset = -1; rowOffset <= 1; rowOffset++) {
 				for (colOffset = -1; colOffset <= 1; colOffset++) {
-
 					Gx += filt_image[row + rowOffset][col + colOffset] * GxMask[rowOffset + 1][colOffset + 1];
 					Gy += filt_image[row + rowOffset][col + colOffset] * GyMask[rowOffset + 1][colOffset + 1];
 				}
@@ -263,25 +203,18 @@ bool compare_Sobel_images() {
 			if (((thisAngle > 112.5) && (thisAngle < 157.5)) || ((thisAngle > -67.5) && (thisAngle < -22.5)))
 				newAngle = 135;
 
-
 			if (test1 != gradient[row][col]) {
 				return false;
 			}
 
 			if (edgeDir[row][col] != newAngle)
 				return false;
-
 		}
 	}
-
 	return true;
 }
 
-
-
-
-void read_image(char* filename, unsigned short int image[N][M])
-{
+void read_image(char* filename, unsigned short int image[N][M]) {
 	int inint = -1;
 	int c;
 	FILE *finput;
@@ -291,16 +224,11 @@ void read_image(char* filename, unsigned short int image[N][M])
 	//finput = NULL;
 	openfile(filename, &finput);
 
-
 	for (j = 0; j < N; j++)
 		for (i = 0; i < M; i++) {
 			c = getc(finput);
-
-
 			image[j][i] = (unsigned short int)c;
 		}
-
-
 
 	/* for (j=0; j<N; ++j)
 	   for (i=0; i<M; ++i) {
@@ -313,18 +241,11 @@ void read_image(char* filename, unsigned short int image[N][M])
 	   }*/
 
 	fclose(finput);
-
 }
 
-
-
-
-
-void write_image(char* filename, unsigned short int image[N][M])
-{
+void write_image(char* filename, unsigned short int image[N][M]) {
 	FILE* foutput;
 	int i, j;
-
 
 	printf("  Writing result to disk (%s)...\n", filename);
 	if ((err = fopen_s(&foutput, filename, "wb")) != NULL) {
@@ -344,21 +265,9 @@ void write_image(char* filename, unsigned short int image[N][M])
 		if (M % 32 != 0) fprintf(foutput, "\n");
 	}
 	fclose(foutput);
-
-
 }
 
-
-
-
-
-
-
-
-
-
-void openfile(char *filename, FILE** finput)
-{
+void openfile(char *filename, FILE** finput) {
 	int x0, y0;
 	char header[255];
 	int aa;
@@ -379,23 +288,15 @@ void openfile(char *filename, FILE** finput)
 	x0 = getint(*finput);
 	y0 = getint(*finput);
 
-
-
-
-
 	if ((x0 != M) || (y0 != N)) {
 		printf("Image dimensions do not match: %ix%i expected\n", N, M);
 		exit(-1);
 	}
 
 	x0 = getint(*finput); /* read and throw away the range info */
-
-
 }
 
-
-int getint(FILE *fp) /* adapted from "xv" source code */
-{
+int getint(FILE *fp) /* adapted from "xv" source code */ {
 	int c, i, firstchar, garbage;
 
 	/* note:  if it sees a '#' character, all characters from there to end of
@@ -441,5 +342,3 @@ int getint(FILE *fp) /* adapted from "xv" source code */
 	}
 	return i;
 }
-
-
