@@ -65,7 +65,7 @@ void print_message(char *s, bool outcome) {
 void Gaussian_Blur_AVX() {
 	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
 	__m256i r8, r9, r10, r14, r15, const0, const1, const2, ex1, ex2, ex3;
-	__m128i t0, t1, t2, t3, t4, t5,c0,c1,c2;
+	__m128i t0, t1, t2, t3, t4, t5, c0, c1, c2;
 	short int row, col;
 	int temp;
 
@@ -73,8 +73,10 @@ void Gaussian_Blur_AVX() {
 	const1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
 	const2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
 
+	// N = Width, M = Height
 	for(row = 2; row < N - 2; row++) {
-		for(col = 2; col < M - ?; col++) {//I have put an '?' here as you will exceed the array bounds. Although it will work this is bad practice
+		for(col = 2; col < M - 2; col++) {//I have put an '?' here as you will exceed the array bounds. Although it will work this is bad practice
+			temp = 0;
 			r0 = _mm256_loadu_si256((__m256i *) &in_image[row - 2][col - 2]); //load 16 short ints into r0. Below, you will need to process the first 5 only. 
 			//load the other elements this way too
 
@@ -85,11 +87,41 @@ void Gaussian_Blur_AVX() {
 			// use ...=_mm256_hadd_epi32(...) MORE THAN ONE TIMES
 
 			// use temp=_mm256_cvtsi256_si32(...)
+			temp += in_image[row - 2][col - 2] * gaussianMask[0][0];
+			temp += in_image[row - 2][col - 1] * gaussianMask[0][1];
+			temp += in_image[row - 2][col] *     gaussianMask[0][2];
+			temp += in_image[row - 2][col + 1] * gaussianMask[0][3];
+			temp += in_image[row - 2][col + 2] * gaussianMask[0][4];
+
+			temp += in_image[row - 1][col - 2] * gaussianMask[1][0];
+			temp += in_image[row - 1][col - 1] * gaussianMask[1][1];
+			temp += in_image[row - 1][col] *	 gaussianMask[1][2];
+			temp += in_image[row - 1][col + 1] * gaussianMask[1][3];
+			temp += in_image[row - 1][col + 2] * gaussianMask[1][4];
+
+			temp += in_image[row][col - 2] * gaussianMask[2][0];
+			temp += in_image[row][col - 1] * gaussianMask[2][1];
+			temp += in_image[row][col] *     gaussianMask[2][2];
+			temp += in_image[row][col + 1] * gaussianMask[2][3];
+			temp += in_image[row][col + 2] * gaussianMask[2][4];
+
+			temp += in_image[row + 1][col - 2] * gaussianMask[3][0];
+			temp += in_image[row + 1][col - 1] * gaussianMask[3][1];
+			temp += in_image[row + 1][col] *     gaussianMask[3][2];
+			temp += in_image[row + 1][col + 1] * gaussianMask[3][3];
+			temp += in_image[row + 1][col + 2] * gaussianMask[3][4];
+
+			temp += in_image[row + 2][col - 2] * gaussianMask[4][0];
+			temp += in_image[row + 2][col - 1] * gaussianMask[4][1];
+			temp += in_image[row + 2][col] *     gaussianMask[4][2];
+			temp += in_image[row + 2][col + 1] * gaussianMask[4][3];
+			temp += in_image[row + 2][col + 2] * gaussianMask[4][4];
+
 			filt_image[row][col] = temp / 159;
 		}
 
 		//padding
-		for(col = ? ; col < M - 2; col++) { // modify the ? accordingly 
+		for(col = 2; col < M - 2; col++) { // modify the ? accordingly 
 			temp = 0;
 			for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
 				for(int colOffset = -2; colOffset <= 2; colOffset++) {
@@ -97,6 +129,49 @@ void Gaussian_Blur_AVX() {
 				}
 			}
 			filt_image[row][col] = temp / 159;
+		}
+	}
+}
+
+void Gaussian_Blur_default_unrolled() {
+	short int row, col;
+	short int newPixel;
+
+	for(row = 2; row < N - 2; row++) {
+		for(col = 2; col < M - 2; col++) {
+			newPixel = 0;
+
+			newPixel += in_image[row - 2][col - 2] * gaussianMask[0][0];
+			newPixel += in_image[row - 2][col - 1] * gaussianMask[0][1];
+			newPixel += in_image[row - 2][col] *     gaussianMask[0][2];
+			newPixel += in_image[row - 2][col + 1] * gaussianMask[0][3];
+			newPixel += in_image[row - 2][col + 2] * gaussianMask[0][4];
+
+			newPixel += in_image[row - 1][col - 2] * gaussianMask[1][0];
+			newPixel += in_image[row - 1][col - 1] * gaussianMask[1][1];
+			newPixel += in_image[row - 1][col] *	 gaussianMask[1][2];
+			newPixel += in_image[row - 1][col + 1] * gaussianMask[1][3];
+			newPixel += in_image[row - 1][col + 2] * gaussianMask[1][4];
+
+			newPixel += in_image[row][col - 2] * gaussianMask[2][0];
+			newPixel += in_image[row][col - 1] * gaussianMask[2][1];
+			newPixel += in_image[row][col] *     gaussianMask[2][2];
+			newPixel += in_image[row][col + 1] * gaussianMask[2][3];
+			newPixel += in_image[row][col + 2] * gaussianMask[2][4];
+
+			newPixel += in_image[row + 1][col - 2] * gaussianMask[3][0];
+			newPixel += in_image[row + 1][col - 1] * gaussianMask[3][1];
+			newPixel += in_image[row + 1][col] *     gaussianMask[3][2];
+			newPixel += in_image[row + 1][col + 1] * gaussianMask[3][3];
+			newPixel += in_image[row + 1][col + 2] * gaussianMask[3][4];
+
+			newPixel += in_image[row + 2][col - 2] * gaussianMask[4][0];
+			newPixel += in_image[row + 2][col - 1] * gaussianMask[4][1];
+			newPixel += in_image[row + 2][col] *     gaussianMask[4][2];
+			newPixel += in_image[row + 2][col + 1] * gaussianMask[4][3];
+			newPixel += in_image[row + 2][col + 2] * gaussianMask[4][4];
+
+			filt_image[row][col] = newPixel / 159;
 		}
 	}
 }
