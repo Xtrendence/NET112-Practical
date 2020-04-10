@@ -19,7 +19,7 @@ int main() {
 	auto start = std::chrono::high_resolution_clock::now();
 
 	for (int it = 0; it != TIMES; it++) {
-		Gaussian_Blur_default();
+		Gaussian_Blur_AVX();
 	}
 
 	auto finish = std::chrono::high_resolution_clock::now();
@@ -66,16 +66,42 @@ void Gaussian_Blur_AVX() {
 	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
 	__m256i r8, r9, r10, r14, r15, const0, const1, const2, ex1, ex2, ex3;
 	__m128i t0, t1, t2, t3, t4, t5,c0,c1,c2;
-	int i, j;
+	short int row, col;
 	int temp;
 
 	const0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
 	const1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
 	const2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
 
-	c0 = _mm_set_epi16(0, 0, 0, 2, 4, 5, 4, 2);
-	c1 = _mm_set_epi16(0, 0, 0, 4, 9, 12, 9, 4);
-	c2 = _mm_set_epi16(0, 0, 0, 5, 12, 15, 12, 5);
+	for (row = 2; row < N - 2; row++) {
+		for (col = 2; col < M - ?; col++) {//I have put an '?' here as you will exceed the array bounds. Although it will work this is bad practice
+
+			r0 = _mm256_loadu_si256((__m256i *) &in_image[row - 2][col - 2]); //load 16 short ints into r0. Below, you will need to process the first 5 only. 
+			//load the other elements this way too
+
+			// use  ...=_mm256_madd_epi16(...) MORE THAN ONE TIMES
+
+			// use ...=_mm256_add_epi32(...) MORE THAN ONE TIMES
+
+			// use ...=_mm256_hadd_epi32(...) MORE THAN ONE TIMES
+
+			// use temp=_mm256_cvtsi256_si32(...)
+			filt_image[row][col] = temp / 159;
+
+
+		}
+
+		//padding
+		for (col = ? ; col < M - 2; col++) { // modify the ? accordingly 
+			temp = 0;
+			for (int rowOffset = -2; rowOffset <= 2; rowOffset++) {
+				for (int colOffset = -2; colOffset <= 2; colOffset++) {
+					temp += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
+				}
+			}
+			filt_image[row][col] = temp / 159;
+		}
+	}
 }
 
 void Gaussian_Blur_default() {
