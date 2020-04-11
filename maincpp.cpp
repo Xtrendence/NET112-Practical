@@ -93,28 +93,32 @@ void Gaussian_Blur_AVX() {
 			p4 = _mm256_madd_epi16(r4, m0);
 			
 			// Add up the values for filt_image().
-			a0 = _mm256_add_epi32(p0, p0);
-			a1 = _mm256_add_epi32(p1, p1);
-			a2 = _mm256_add_epi32(p2, p2);
-			a3 = _mm256_add_epi32(p3, p3);
-			a4 = _mm256_add_epi32(p4, p4);
+			a0 = _mm256_add_epi32(p0, p1);
+			a1 = _mm256_add_epi32(a0, p2);
+			a2 = _mm256_add_epi32(a1, p3);
+			a3 = _mm256_add_epi32(a2, p4);
 
-			// _mm256_hadd_epi32();
+			r0 = _mm256_hadd_epi32(r0, a3);
+			r1 = _mm256_hadd_epi32(r0, a3);
+			r2 = _mm256_hadd_epi32(r0, a3);
+			r3 = _mm256_hadd_epi32(r0, a3);
+			r4 = _mm256_hadd_epi32(r0, a3);
 
-			sum = (_mm_cvtsi128_si32(_mm256_castsi256_si128(a3)));
+			sum = a3[0] + a3[1] + a3[2] + a3[3] + a3[4];
+			//sum += (_mm_cvtsi128_si32(_mm256_castsi256_si128(a3)));
 
 			filt_image[row][col] = sum / 159;
 		}
 
-		// for(col = 2; col < M - 2; col++) {
-		// 	sum = 0;
-		// 	for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
-		// 		for(int colOffset = -2; colOffset <= 2; colOffset++) {
-		// 			sum += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
-		// 		}
-		// 	}
-		// 	filt_image[row][col] = sum / 159;
-		// }
+		for(col = 1022; col < M - 2; col++) {
+			sum = 0;
+			for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
+				for(int colOffset = -2; colOffset <= 2; colOffset++) {
+					sum += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
+				}
+			}
+			filt_image[row][col] = sum / 159;
+		}
 	}
 }
 
