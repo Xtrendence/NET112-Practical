@@ -63,15 +63,14 @@ void print_message(char *s, bool outcome) {
 }
 
 void Gaussian_Blur_AVX() {
-	__m256i r0, r1, r2, r3, r4, r5, r6, r7; // Row
-	__m256i r8, r9, r10, r11, r12, r13, r14, r15, const0, const1, const2, ex1, ex2, ex3;
-	__m256i r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26;
-	__m256i m0, m1, m2, mask; // Mask
-	__m256i p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10; // Pixels
-	__m256i b0, b1, b2, b3, b4, b5, b6;
+	__m256i r0, r1, r2, r3, r4, r5, r6, r7; // Rows
+	__m256i p0, p1, p2, p3, p4, p5; // Multiplied Pixels
+	__m256i r8, r9, r10, r14, r15, m0, m1, m2, ex1, ex2, ex3;
+	__m256i a0, a1, a2, a3, a4, a5; // Added
+	__m256i h0, h1, h2, h3, h4, h5; // Hadd
 	__m128i t0, t1, t2, t3, t4, t5, c0, c1, c2;
-	short int row, col, rowOffset, colOffset;
-	int newPixel, n0, n1, n2, n3, n4, n5, temp;
+	short int row, col;
+	int sum, n0, n1, n2, n3, n4; // Pixels
 
 	m0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
 	m1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
@@ -79,44 +78,43 @@ void Gaussian_Blur_AVX() {
 
 	for(row = 2; row < N - 2; row++) {
 		for(col = 2; col < M - 2; col++) {
-			newPixel = 0;
+			// Load row.
+			r0 = _mm256_loadu_si256((__m256i *) & in_image[row - 2][col - 2]);
+			r1 = _mm256_loadu_si256((__m256i *) & in_image[row - 1][col - 2]);
+			r2 = _mm256_loadu_si256((__m256i *) & in_image[row][col - 2]);
+			r3 = _mm256_loadu_si256((__m256i *) & in_image[row + 1][col - 2]);
+			r4 = _mm256_loadu_si256((__m256i *) & in_image[row + 2][col - 2]);
 
-			for(rowOffset = -2; rowOffset <= 2; rowOffset++) {
-				for(colOffset = -2; colOffset <= 2; colOffset++) {
-					r0 = _mm256_loadu_si256((__m256i *) &in_image[row + rowOffset][col + colOffset]);
+			// Multiply row values by the appropriate mask values.
+			p0 = _mm256_madd_epi16(r0, m0);
+			p1 = _mm256_madd_epi16(r1, m1);
+			p2 = _mm256_madd_epi16(r2, m2);
+			p3 = _mm256_madd_epi16(r3, m1);
+			p4 = _mm256_madd_epi16(r4, m0);
+			
+			// Add up the values for filt_image().
+			a0 = _mm256_add_epi32(p0, p0);
+			a1 = _mm256_add_epi32(p1, p1);
+			a2 = _mm256_add_epi32(p2, p2);
+			a3 = _mm256_add_epi32(p3, p3);
+			a4 = _mm256_add_epi32(p4, p4);
 
-					if(colOffset + 2 == 0) {
-						mask = m0;
-					}
-					else if(colOffset + 2 == 1) {
-						mask = m1;
-					}
-					else if(colOffset + 2 == 2) {
-						mask = m2;
-					}
-					else if(colOffset + 2 == 3) {
-						mask = m1;
-					}
-					else if(colOffset + 2 == 4) {
-						mask = m0;
-					}
+			// _mm256_hadd_epi32();
 
-					p0 = _mm256_madd_epi16(r0, mask);
-					
-					r0 = _mm256_hadd_epi32(r0, r1);
+			sum = (_mm_cvtsi128_si32(_mm256_castsi256_si128(a3)));
 
-					newPixel += (_mm_cvtsi128_si32(_mm256_castsi256_si128(p0)));
-				}
-			}
-
-			filt_image[row][col] = newPixel / 159;
-
-			// use ...=_mm256_add_epi32(...) MORE THAN ONE TIMES
-
-			// use ...=_mm256_hadd_epi32(...) MORE THAN ONE TIMES
-
-			// use temp=_mm256_cvtsi256_si32(...)
+			filt_image[row][col] = sum / 159;
 		}
+
+		// for(col = 2; col < M - 2; col++) {
+		// 	sum = 0;
+		// 	for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
+		// 		for(int colOffset = -2; colOffset <= 2; colOffset++) {
+		// 			sum += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
+		// 		}
+		// 	}
+		// 	filt_image[row][col] = sum / 159;
+		// }
 	}
 }
 
@@ -127,14 +125,19 @@ void Gaussian_Blur_AVX() {
 // My goal is to do these calculations using intrinsic functions.
 
 // _mm256_loadu_si256() -> Load 256-bits of integer data from memory into "dst". mem_addr does not need to be aligned on any particular boundary.
+// Use to get all 5 rows of pixels.
 
 // _mm256_madd_epi16() -> Multiply packed signed 16-bit integers in "a" and "b", producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers, and pack the results in "dst".
+// Use to multiply each pixel by its appropriate mask value.
 
 // _mm256_add_epi32() -> Add packed 32-bit integers in "a" and "b", and store the results in "dst".
+// 
 
 // _mm256_hadd_epi32() -> Horizontally add adjacent pairs of 32-bit integers in "a" and "b", and pack the signed 32-bit results in "dst".
+// 
 
 // _mm256_cvtsi256_si32() -> Copy the lower 32-bit integer in "a" to "dst".
+// Use to turn the array of signed integers to a 32-bit integer (i.e. newPixel).
 
 void Gaussian_Blur_default_unrolled() {
 	short int row, col;
