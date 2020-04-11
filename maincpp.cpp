@@ -63,31 +63,59 @@ void print_message(char *s, bool outcome) {
 }
 
 void Gaussian_Blur_AVX() {
-	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
+	__m256i r0, r1, r2, r3, r4, r5, r6, r7; // Row
 	__m256i r8, r9, r10, r11, r12, r13, r14, r15, const0, const1, const2, ex1, ex2, ex3;
 	__m256i r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26;
+	__m256i m0, m1, m2, mask; // Mask
+	__m256i p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10; // Pixels
 	__m256i b0, b1, b2, b3, b4, b5, b6;
 	__m128i t0, t1, t2, t3, t4, t5, c0, c1, c2;
 	short int row, col, rowOffset, colOffset;
-	int newPixel;
+	int newPixel, n0, n1, n2, n3, n4, n5, temp;
 
-	const0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
-	const1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
-	const2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
+	m0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
+	m1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
+	m2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
 
 	for(row = 2; row < N - 2; row++) {
 		for(col = 2; col < M - 2; col++) {
-			r0 = _mm256_loadu_si256((__m256i *) &in_image[row - 2][col - 2]);
+			newPixel = 0;
 
-			// use ...=_mm256_madd_epi16() MORE THAN ONE TIMES
+			for(rowOffset = -2; rowOffset <= 2; rowOffset++) {
+				for(colOffset = -2; colOffset <= 2; colOffset++) {
+					r0 = _mm256_loadu_si256((__m256i *) &in_image[row + rowOffset][col + colOffset]);
+
+					if(colOffset + 2 == 0) {
+						mask = m0;
+					}
+					else if(colOffset + 2 == 1) {
+						mask = m1;
+					}
+					else if(colOffset + 2 == 2) {
+						mask = m2;
+					}
+					else if(colOffset + 2 == 3) {
+						mask = m1;
+					}
+					else if(colOffset + 2 == 4) {
+						mask = m0;
+					}
+
+					p0 = _mm256_madd_epi16(r0, mask);
+					
+					r0 = _mm256_hadd_epi32(r0, r1);
+
+					newPixel += (_mm_cvtsi128_si32(_mm256_castsi256_si128(p0)));
+				}
+			}
+
+			filt_image[row][col] = newPixel / 159;
 
 			// use ...=_mm256_add_epi32(...) MORE THAN ONE TIMES
 
 			// use ...=_mm256_hadd_epi32(...) MORE THAN ONE TIMES
 
 			// use temp=_mm256_cvtsi256_si32(...)
-
-			filt_image[row][col] = newPixel / 159;
 		}
 	}
 }

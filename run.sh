@@ -7,6 +7,6 @@ if test -f "$FILE"; then
 	start ./a.exe
 fi
 
-sleep 2
+sleep 10
 
 ./clean.sh
