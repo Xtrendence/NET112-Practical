@@ -64,74 +64,49 @@ void print_message(char *s, bool outcome) {
 
 void Gaussian_Blur_AVX() {
 	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
-	__m256i r8, r9, r10, r14, r15, const0, const1, const2, ex1, ex2, ex3;
+	__m256i r8, r9, r10, r11, r12, r13, r14, r15, const0, const1, const2, ex1, ex2, ex3;
+	__m256i r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26;
+	__m256i b0, b1, b2, b3, b4, b5, b6;
 	__m128i t0, t1, t2, t3, t4, t5, c0, c1, c2;
-	short int row, col;
-	int temp;
+	short int row, col, rowOffset, colOffset;
+	int newPixel;
 
 	const0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
 	const1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
 	const2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
 
-	// N = Width, M = Height
 	for(row = 2; row < N - 2; row++) {
-		for(col = 2; col < M - 2; col++) {//I have put an '?' here as you will exceed the array bounds. Although it will work this is bad practice
-			temp = 0;
-			r0 = _mm256_loadu_si256((__m256i *) &in_image[row - 2][col - 2]); //load 16 short ints into r0. Below, you will need to process the first 5 only. 
-			//load the other elements this way too
+		for(col = 2; col < M - 2; col++) {
+			r0 = _mm256_loadu_si256((__m256i *) &in_image[row - 2][col - 2]);
 
-			// use  ...=_mm256_madd_epi16(...) MORE THAN ONE TIMES
+			// use ...=_mm256_madd_epi16() MORE THAN ONE TIMES
 
 			// use ...=_mm256_add_epi32(...) MORE THAN ONE TIMES
 
 			// use ...=_mm256_hadd_epi32(...) MORE THAN ONE TIMES
 
 			// use temp=_mm256_cvtsi256_si32(...)
-			temp += in_image[row - 2][col - 2] * gaussianMask[0][0];
-			temp += in_image[row - 2][col - 1] * gaussianMask[0][1];
-			temp += in_image[row - 2][col] *     gaussianMask[0][2];
-			temp += in_image[row - 2][col + 1] * gaussianMask[0][3];
-			temp += in_image[row - 2][col + 2] * gaussianMask[0][4];
 
-			temp += in_image[row - 1][col - 2] * gaussianMask[1][0];
-			temp += in_image[row - 1][col - 1] * gaussianMask[1][1];
-			temp += in_image[row - 1][col] *	 gaussianMask[1][2];
-			temp += in_image[row - 1][col + 1] * gaussianMask[1][3];
-			temp += in_image[row - 1][col + 2] * gaussianMask[1][4];
-
-			temp += in_image[row][col - 2] * gaussianMask[2][0];
-			temp += in_image[row][col - 1] * gaussianMask[2][1];
-			temp += in_image[row][col] *     gaussianMask[2][2];
-			temp += in_image[row][col + 1] * gaussianMask[2][3];
-			temp += in_image[row][col + 2] * gaussianMask[2][4];
-
-			temp += in_image[row + 1][col - 2] * gaussianMask[3][0];
-			temp += in_image[row + 1][col - 1] * gaussianMask[3][1];
-			temp += in_image[row + 1][col] *     gaussianMask[3][2];
-			temp += in_image[row + 1][col + 1] * gaussianMask[3][3];
-			temp += in_image[row + 1][col + 2] * gaussianMask[3][4];
-
-			temp += in_image[row + 2][col - 2] * gaussianMask[4][0];
-			temp += in_image[row + 2][col - 1] * gaussianMask[4][1];
-			temp += in_image[row + 2][col] *     gaussianMask[4][2];
-			temp += in_image[row + 2][col + 1] * gaussianMask[4][3];
-			temp += in_image[row + 2][col + 2] * gaussianMask[4][4];
-
-			filt_image[row][col] = temp / 159;
-		}
-
-		//padding
-		for(col = 2; col < M - 2; col++) { // modify the ? accordingly 
-			temp = 0;
-			for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
-				for(int colOffset = -2; colOffset <= 2; colOffset++) {
-					temp += in_image[row + rowOffset][col + colOffset] * gaussianMask[2 + rowOffset][2 + colOffset];
-				}
-			}
-			filt_image[row][col] = temp / 159;
+			filt_image[row][col] = newPixel / 159;
 		}
 	}
 }
+
+// N = Width, M = Height (both of which are 1024).
+
+// The algorithm works by going through each row and each column, then getting each individual pixel in a 5x5 area, and multiplying its value (0-255) by the appropriate mask value (2, 4, 5, 4, 2), (4, 9, 12, 9, 4), (5, 12, 15, 12, 5), (4, 9, 12, 9, 4), (2, 4, 5, 4, 2).
+
+// My goal is to do these calculations using intrinsic functions.
+
+// _mm256_loadu_si256() -> Load 256-bits of integer data from memory into "dst". mem_addr does not need to be aligned on any particular boundary.
+
+// _mm256_madd_epi16() -> Multiply packed signed 16-bit integers in "a" and "b", producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers, and pack the results in "dst".
+
+// _mm256_add_epi32() -> Add packed 32-bit integers in "a" and "b", and store the results in "dst".
+
+// _mm256_hadd_epi32() -> Horizontally add adjacent pairs of 32-bit integers in "a" and "b", and pack the signed 32-bit results in "dst".
+
+// _mm256_cvtsi256_si32() -> Copy the lower 32-bit integer in "a" to "dst".
 
 void Gaussian_Blur_default_unrolled() {
 	short int row, col;

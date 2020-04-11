@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +9,6 @@
 #include <iostream>
 #include <immintrin.h>
 #include <Windows.h>
-
 
 #define N 1024
 #define M 1024
