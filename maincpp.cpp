@@ -63,14 +63,14 @@ void print_message(char *s, bool outcome) {
 }
 
 void Gaussian_Blur_AVX() {
-	__m256i r0, r1, r2, r3, r4, r5, r6, r7; // Rows
-	__m256i p0, p1, p2, p3, p4, p5; // Multiplied Pixels
+	__m256i r0, r1, r2, r3, r4, r5, r6, r7;
+	__m256i p0, p1, p2, p3, p4, p5;
 	__m256i r8, r9, r10, r14, r15, m0, m1, m2, ex1, ex2, ex3;
-	__m256i a0, a1, a2, a3, a4, a5; // Added
-	__m256i h0, h1, h2, h3, h4, h5; // Hadd
+	__m256i a0, a1, a2, a3, a4, a5;
+	__m256i h0, h1, h2, h3, h4, h5;
 	__m128i t0, t1, t2, t3, t4, t5, c0, c1, c2;
 	short int row, col;
-	int newPixel, n0, n1, n2, n3, n4; // Pixels
+	int newPixel, n0, n1, n2, n3, n4;
 
 	m0 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 5, 4, 2);
 	m1 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 9, 12, 9, 4);
