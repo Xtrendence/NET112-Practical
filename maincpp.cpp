@@ -121,27 +121,6 @@ void Gaussian_Blur_AVX() {
 	}
 }
 
-// N = Width, M = Height (both of which are 1024).
-
-// The algorithm works by going through each row and each column, then getting each individual pixel in a 5x5 area, and multiplying its value (0-255) by the appropriate mask value (2, 4, 5, 4, 2), (4, 9, 12, 9, 4), (5, 12, 15, 12, 5), (4, 9, 12, 9, 4), (2, 4, 5, 4, 2).
-
-// My goal is to do these calculations using intrinsic functions.
-
-// _mm256_loadu_si256() -> Load 256-bits of integer data from memory into "dst". mem_addr does not need to be aligned on any particular boundary.
-// Use to get all 5 rows of pixels.
-
-// _mm256_madd_epi16() -> Multiply packed signed 16-bit integers in "a" and "b", producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers, and pack the results in "dst".
-// Use to multiply each pixel by its appropriate mask value.
-
-// _mm256_add_epi32() -> Add packed 32-bit integers in "a" and "b", and store the results in "dst".
-// 
-
-// _mm256_hadd_epi32() -> Horizontally add adjacent pairs of 32-bit integers in "a" and "b", and pack the signed 32-bit results in "dst".
-// 
-
-// _mm256_cvtsi256_si32() -> Copy the lower 32-bit integer in "a" to "dst".
-// Use to turn the array of signed integers to a 32-bit integer (i.e. newPixel).
-
 void Gaussian_Blur_default_unrolled() {
 	short int row, col;
 	short int newPixel;
