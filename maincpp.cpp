@@ -77,7 +77,7 @@ void Gaussian_Blur_AVX() {
 	m2 = _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 12, 15, 12, 5);
 
 	for(row = 2; row < N - 2; row++) {
-		for(col = 2; col < M - 2; col++) {
+		for(col = 2; col < 1008; col++) {
 			r0 = _mm256_loadu_si256((__m256i *) & in_image[row - 2][col - 2]);
 			r1 = _mm256_loadu_si256((__m256i *) & in_image[row - 1][col - 2]);
 			r2 = _mm256_loadu_si256((__m256i *) & in_image[row][col - 2]);
@@ -104,7 +104,7 @@ void Gaussian_Blur_AVX() {
 			filt_image[row][col] = newPixel / 159;
 		}
 
-		for(col = 1020; col < M - 2; col++) {
+		for(col = 1008; col < M - 2; col++) {
 			newPixel = 0;
 			for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
 				for(int colOffset = -2; colOffset <= 2; colOffset++) {
