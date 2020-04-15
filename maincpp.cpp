@@ -65,10 +65,10 @@ void print_message(char *s, bool outcome) {
 void Gaussian_Blur_AVX() {
 	__m256i r0, r1, r2, r3, r4; // Rows.
 	__m256i p0, p1, p2, p3, p4; // Multiplied.
-	__m256i m0, m1, m2;
+	__m256i m0, m1, m2; // Mask.
 	__m256i a0, a1, a2, a3, a4; // Added.
-	__m256i l0, l1, l2, l3, l4, l5; // Low 64-bits.
-	__m256i h0, h1, h2, h3, h4, h5; // High 64-bits.
+	__m256i l0, l1, l2, l3, l4, l5;
+	__m256i h0, h1, h2, h3, h4, h5;
 	short int row, col; // Row and Column.
 	int newPixel;
 
@@ -93,9 +93,9 @@ void Gaussian_Blur_AVX() {
 			p4 = _mm256_madd_epi16(r4, m0);
 
 			a0 = _mm256_add_epi32(p0, p1); // Row 1 + Row 2.
-			a1 = _mm256_add_epi32(a0, p2); // (Row 1 + Row 2) + Row 3.
-			a2 = _mm256_add_epi32(a1, p3); // (Row 1 + Row 2 + Row 3) + Row 4.
-			a3 = _mm256_add_epi32(a2, p4); // (Row 1 + Row 2 + Row 3 + Row 4) + Row 5.
+			a1 = _mm256_add_epi32(a0, p2); // (Row 1, Row 2) + Row 3.
+			a2 = _mm256_add_epi32(a1, p3); // (Row 1, Row 2, and Row 3) + Row 4.
+			a3 = _mm256_add_epi32(a2, p4); // (Row 1, Row 2, Row 3, and Row 4) + Row 5.
 			
 			// Add columns together.
 			h0 = _mm256_hadd_epi32(a3, a3);
