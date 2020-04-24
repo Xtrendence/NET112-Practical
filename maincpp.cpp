@@ -101,7 +101,7 @@ void Gaussian_Blur_AVX() {
 			h0 = _mm256_hadd_epi32(a3, a3);
 			h1 = _mm256_hadd_epi32(h0, h0);
 
-			newPixel = _mm_cvtsi128_si32(_mm256_castsi256_si128(h1)); // My compiler seems to give an error when "_mm256_cvtsi256_si32()" is used, and VS Code points out that "_mm_cvtsi128_si32(_mm256_castsi256_si128())" is an expansion of "_mm256_cvtsi256_si32()", the use of which doesn't result in any errors.
+			newPixel = _mm_cvtsi128_si32(_mm256_castsi256_si128(h1)); // My compiler (GCC) seems to give an error when "_mm256_cvtsi256_si32()" is used, and VS Code points out that "_mm_cvtsi128_si32(_mm256_castsi256_si128())" is an expansion of "_mm256_cvtsi256_si32()", the use of which doesn't result in any errors.
 
 			filt_image[row][col] = newPixel / 159;
 		}
