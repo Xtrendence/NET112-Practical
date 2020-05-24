@@ -68,7 +68,7 @@ void Gaussian_Blur_AVX() {
 	__m256i m0, m1, m2; // Mask.
 	__m256i a0, a1, a2, a3, a4; // Added.
 	__m256i l0, l1, l2, l3, l4, l5;
-	__m256i h0, h1, h2, h3, h4, h5;
+	__m128i h0, h1, h2, h3, h4, h5;
 	short int row, col; // Row and Column.
 	int newPixel;
 
@@ -96,17 +96,22 @@ void Gaussian_Blur_AVX() {
 			a1 = _mm256_add_epi32(a0, p2); // (Row 1, Row 2) + Row 3.
 			a2 = _mm256_add_epi32(a1, p3); // (Row 1, Row 2, and Row 3) + Row 4.
 			a3 = _mm256_add_epi32(a2, p4); // (Row 1, Row 2, Row 3, and Row 4) + Row 5.
-			
-			// Add columns together.
-			h0 = _mm256_hadd_epi32(a3, a3);
-			h1 = _mm256_hadd_epi32(h0, h0);
 
-			newPixel = _mm_cvtsi128_si32(_mm256_castsi256_si128(h1)); // My compiler (GCC) seems to give an error when "_mm256_cvtsi256_si32()" is used, and VS Code points out that "_mm_cvtsi128_si32(_mm256_castsi256_si128())" is an expansion of "_mm256_cvtsi256_si32()", the use of which doesn't result in any errors.
+			h0 = _mm256_castsi256_si128(a3); // Convert to 128-bit integers.
+			h1 = _mm_shuffle_epi32(h0, _MM_SHUFFLE(1, 0, 3, 2)); // Shuffle integers.
+			h2 = _mm_add_epi32(h0, h1);
+
+			h3 = _mm_shufflelo_epi16(h2, _MM_SHUFFLE(1, 0, 3, 2)); // Shuffle integers in the lower 64 bits.
+			h4 = _mm_add_epi32(h2, h3); // Simulate a horizontal add by vertically adding the shuffled integers with the regular ones.
+
+			l0 = _mm256_castsi128_si256(h4); // Convert back to 256-bit integers.
+
+			newPixel = _mm_cvtsi128_si32(_mm256_castsi256_si128(l0)); // My compiler (GCC) seems to give an error when "_mm256_cvtsi256_si32()" is used, and VS Code points out that "_mm_cvtsi128_si32(_mm256_castsi256_si128())" is an expansion of "_mm256_cvtsi256_si32()", the use of which doesn't result in any errors.
 
 			filt_image[row][col] = newPixel / 159;
 		}
 
-		for(col = M - 5; col < M - 2; col++) {
+		for(col = M - 14; col < M - 2; col++) {
 			newPixel = 0;
 			for(int rowOffset = -2; rowOffset <= 2; rowOffset++) {
 				for(int colOffset = -2; colOffset <= 2; colOffset++) {
